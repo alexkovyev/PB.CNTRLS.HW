@@ -32,7 +32,8 @@
 *.app
 
 # VS code and Platformio
-*.json
-*.code-workspace
+.pio
+.vscode
 *.ini
 *.yml
+*.checksum
