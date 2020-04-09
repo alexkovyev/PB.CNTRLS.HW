@@ -2,7 +2,7 @@ import Errors
 from Message_symbols import message_symbols
 
 
-class Message_header(object):
+class MessageHeader(object):
     def __init__(self, string=None):
         self.node_name = None
         self.command_name = None

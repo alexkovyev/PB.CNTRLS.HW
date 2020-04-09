@@ -1,6 +1,6 @@
 import Errors
-from Message_header import Message_header
-from Message_parameters import Message_parameters
+from MessageHeader import MessageHeader
+from MessageParameters import MessageParameters
 from Message_symbols import message_symbols
 
 
@@ -13,11 +13,11 @@ class Message(object):
             if error:
                 raise Errors.MessageFormatError(error)
 
-            self.header = Message_header(string)
-            self.parameters = Message_parameters(string)
+            self.header = MessageHeader(string)
+            self.parameters = MessageParameters(string)
         else:
-            self.header = Message_header()
-            self.parameters = Message_parameters()
+            self.header = MessageHeader()
+            self.parameters = MessageParameters()
 
     def check(self):
         # a bit dirty, but i don`t want to use regex

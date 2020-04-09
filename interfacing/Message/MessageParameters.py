@@ -1,7 +1,7 @@
 from Message_symbols import message_symbols
 
 
-class Message_parameters(object):
+class MessageParameters(object):
     def __init__(self, string=None):
         self.parameters = []
         if string:

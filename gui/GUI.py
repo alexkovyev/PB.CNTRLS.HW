@@ -1,10 +1,10 @@
+import Tkinter as tk
 import os
 import threading
 import time
-
-import Tkinter as tk
-import vlc
 from PIL import ImageTk, Image
+
+import vlc
 
 
 def current_ms_time():
@@ -32,7 +32,7 @@ class MainGUI:
         self.video_frame = tk.Frame(self.window, bg="black")
         self.vlc_instance, self.vlc_media_player_instance = self._create_vlc_instance()
 
-        self.window.bind("<F11>", self.toggleFullScreen)
+        self.window.bind("<F11>", self.toggle_fullscreen)
         self.fullScreenState = True
 
         self.time_limits = {}
@@ -97,13 +97,13 @@ class MainGUI:
         self.video_frame.pack_forget()
         self.vlc_media_player_instance.pause()
 
-    def set_video(self, file, time_limit=0):
+    def set_video(self, video_file, time_limit=0):
         self.hide_label()
         self.hide_image()
         self.show_video()
         self.time_limits["video"] = (current_ms_time(), time_limit)
 
-        fullname = os.path.abspath(file)
+        fullname = os.path.abspath(video_file)
         self.Media = self.vlc_instance.media_new(fullname)
         self.vlc_media_player_instance.set_media(self.Media)
         self.vlc_media_player_instance.set_xwindow(self.video_frame.winfo_id())
@@ -127,10 +127,8 @@ class MainGUI:
                 limit = self.time_limits[key]
                 if limit[1] != 0 and current_ms_time() - limit[0] >= limit[1]:
                     del self.time_limits[key]
-                    print
-                    "here"
                     fn()
 
-    def toggleFullScreen(self, event):
+    def toggle_fullscreen(self, event):
         self.fullScreenState = not self.fullScreenState
         self.window.attributes("-fullscreen", self.fullScreenState)

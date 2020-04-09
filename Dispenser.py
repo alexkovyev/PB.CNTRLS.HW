@@ -2,9 +2,10 @@
 import threading
 from datetime import datetime
 
-import Validators
 import cv2
-from LED.LED import LED, ON_ORANGE_PI, LED_Mode
+
+import Validators
+from LED.LED import LED, ON_ORANGE_PI, LEDMode
 from VideoCapture import VideoCapture
 from gui.GUI import MainGUI, current_ms_time
 from interfacing.InterfacingManager import InterfacingManager
@@ -33,8 +34,7 @@ class Dispenser(threading.Thread):
             cap_id = 1
         self.video_capture = VideoCapture(cap_id)
         if not self.video_capture.isOpened():
-            print
-            "[ERROR]: Cannot open video capture on", cap_id
+            print "[ERROR]: Cannot open video capture on", cap_id
 
         self.interfacing = InterfacingManager(serial_port, self.node_name)
 
@@ -57,7 +57,7 @@ class Dispenser(threading.Thread):
         self.interfacing.die = self.die
 
     def add_light_mode(self, message):
-        mode = LED_Mode()
+        mode = LEDMode()
         parameters = message.parameters.parameters
         mode.colors = [bool(int(x)) for x in parameters[1:4]]
         mode.min_val = int(parameters[4])
@@ -184,8 +184,7 @@ class Dispenser(threading.Thread):
                     message.parameters.append(qr_data)
                     self.interfacing.send(message)
                 else:
-                    print
-                    "Wrong QR code format:", qr_data
+                    print "Wrong QR code format:", qr_data
                     if "wrong_qr" in self.led.modes:
                         self.gui.set_text("Ошибка при считывании QR кода.\nПожалуйста, попробуйте снова.", 3000)
                         self.led.set_mode("wrong_qr")
@@ -199,8 +198,7 @@ class Dispenser(threading.Thread):
     def video_capture_routine(self):
         while not self.die:
             if self.dispensed_id:
-                print
-                "Waiting for pick up:", self.dispensed_id
+                print "Waiting for pick up:", self.dispensed_id
                 vid_name = "{}/{}_{}.avi".format(self.video_directory, self.dispensed_id,
                                                  datetime.today().strftime('%Y-%m-%d-%H:%M:%S'))
                 if not ON_ORANGE_PI:
@@ -223,8 +221,7 @@ class Dispenser(threading.Thread):
                     video_writer.write(img)
                     cv2.waitKey(1)
                 video_writer.release()
-                print
-                "Video saved:", vid_name
+                print "Video saved:", vid_name
                 self.dispensed_id = None
 
                 # I don`t want to add another thread for that

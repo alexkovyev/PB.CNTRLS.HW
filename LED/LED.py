@@ -7,7 +7,7 @@ import time
 if ON_ORANGE_PI:
     import wiringpi
 
-from LED_mode import *
+from LEDMode import *
 
 
 def translate(value, leftMin, leftMax, rightMin, rightMax):
@@ -62,12 +62,10 @@ class LED(object):
 
     def set_mode(self, name):
         if name not in self.modes:
-            print
-            "Unknown mode:", name
+            print "Unknown mode:", name
             return
         if self.current_mode.value != name:
-            print
-            "Current mode:", name
+            print "Current mode:", name
             self.current_mode.value = name
 
             try:

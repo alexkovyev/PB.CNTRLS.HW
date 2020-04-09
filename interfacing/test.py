@@ -3,8 +3,7 @@ from Validator import Validator
 
 
 def test(message):
-    print
-    "Callback called: ", message
+    print "Callback called: ", message
 
 
 def validation_fn(param):

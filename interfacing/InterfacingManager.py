@@ -1,7 +1,7 @@
+import Queue
 import threading
 
-import Queue
-from Callbacks import Callbacks, Message_wrapper
+from Callbacks import Callbacks, MessageWrapper
 from Message.Errors import MessageFormatError
 from Message.Message import Message
 from ParametersValidator import ParametersValidator
@@ -35,7 +35,7 @@ class InterfacingManager(threading.Thread):
                         error = self.validators(message)
                         if error:
                             raise MessageFormatError(error)
-                        self.messages_q.put(Message_wrapper(message))
+                        self.messages_q.put(MessageWrapper(message))
                 except MessageFormatError as e:
                     print
                     "An error occurenced while parsing message '{}':\n{}".format(raw_msg, e)
@@ -62,8 +62,7 @@ class InterfacingManager(threading.Thread):
         message_str = message.to_string()
         if self.bridge:
             self.bridge.send(message_str)
-        print
-        "Message sent:", message_str
+        print "Message sent:", message_str
 
     def join(self):
         self.die = True

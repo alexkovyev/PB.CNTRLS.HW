@@ -7,8 +7,7 @@ from Message.Message import Message
 
 
 def test(message):
-    print
-    "Callback called: ", message
+    print "Callback called: ", message
 
 
 bridge = InterfacingManager("/dev/ttyUSB0", "Node")

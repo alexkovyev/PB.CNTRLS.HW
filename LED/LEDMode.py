@@ -7,7 +7,7 @@ class Color(Enum):
     BLUE = 3
 
 
-class LED_Mode:
+class LEDMode:
     def __init__(self, colors=[], min_val=0, max_val=0, min_time=0, rise_time=0, max_time=0, decrease_time=0,
                  max_circles=0):
         self.colors = colors

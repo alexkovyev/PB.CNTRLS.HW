@@ -1,5 +1,7 @@
 import cv2
 
+from utils import *
+
 
 # You should not update objects of this class with "=" operator
 # Use "update" method instead to make "not_updated" counter work properly

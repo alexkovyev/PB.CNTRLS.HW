@@ -29,7 +29,7 @@ class Callbacks(object):
         return True
 
 
-class Message_wrapper(object):
+class MessageWrapper(object):
     def __init__(self, message):
         self._message = message
 

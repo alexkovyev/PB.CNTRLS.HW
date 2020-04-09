@@ -1,4 +1,4 @@
-'''
+"""
 import time
 
 import serial
@@ -42,7 +42,7 @@ while True:
 #except Exception as e:
 #    print e
 
-'''
+"""
 
 from QR_scanner import QRScanner
 
