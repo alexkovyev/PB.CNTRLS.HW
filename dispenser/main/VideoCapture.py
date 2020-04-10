@@ -1,9 +1,10 @@
 # https://stackoverflow.com/a/54755738/9577873
 
+import Queue
 import threading
 
-import Queue
 import cv2
+
 from LED.LED import ON_ORANGE_PI
 
 

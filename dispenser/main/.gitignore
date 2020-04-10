@@ -1,6 +1,6 @@
 *.pyc
 cmake-build-debug
-.idea
+../../.idea
 .pio
 *.mp4
 *.avi

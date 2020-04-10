@@ -9,10 +9,10 @@ dispenser = Dispenser(None)
 dispenser.start()
 
 
-# add_light_mode_msg = "#[Dispenser;add_light_mode](blink;1;0;1;25;255;1.5;0;1;0)#"
+# add_light_mode_msg = "#[Dispenser;add_light_mode](blink;1;0;1;25;255;1.5;0;1;0;0)#"
 # dispenser.interfacing.raw_messages_q.put(add_light_mode_msg)
 
-# add_light_mode_msg = "#[Dispenser;add_light_mode](idle;0;1;0;25;255;1.5;0;1;0)#"
+# add_light_mode_msg = "#[Dispenser;add_light_mode](idle;0;1;0;25;255;1.5;0;1;0;0)#"
 # dispenser.interfacing.raw_messages_q.put(add_light_mode_msg)
 
 # add_light_mode_msg = "#[Dispenser;add_light_mode](wrong_qr;0;0;1;50;255;1;1;1;0)#"
@@ -21,13 +21,13 @@ dispenser.start()
 # set_light_mode_msg = "#[Dispenser;set_light_mode](blink)#"
 # dispenser.interfacing.raw_messages_q.put(set_light_mode_msg)
 
-# set_display_text_msg = "#[Dispenser;set_display_text](hello, world!;15;255;255;255)#"
+# set_display_text_msg = "#[Dispenser;set_display_text](hello, world!;0;15;255;255;255)#"
 # dispenser.interfacing.raw_messages_q.put(set_display_text_msg)
 
-# set_display_img_msg = "#[Dispenser;set_display_image](gui/images/image1.jpg)#"
+# set_display_img_msg = "#[Dispenser;set_display_image](gui/images/image1.jpg;0)#"
 # dispenser.interfacing.raw_messages_q.put(set_display_img_msg)
 
-# set_display_video_msg = "#[Dispenser;set_display_video](gui/videos/test.mp4;60)#"
+# set_display_video_msg = "#[Dispenser;set_display_video](gui/videos/test.mp4;0)#"
 # dispenser.interfacing.raw_messages_q.put(set_display_video_msg)
 
 # will_dispense_msg = "#[Dispenser;will_dispense]()#"
@@ -73,6 +73,8 @@ def demo():
 
             if msg.header.command_name == "qr_scanned":
                 dispenser.interfacing.raw_messages_q.put("#[Dispenser;is_littered]()#")
+                dispenser.interfacing.raw_messages_q.put(
+                    "#[Dispenser;set_display_text](Пожалуйста, подождите...;0;15;255;255;255)#")
                 qr_code = msg.parameters[0]
             elif msg.header.command_name == "is_littered":
                 if msg.parameters[0] == "1":

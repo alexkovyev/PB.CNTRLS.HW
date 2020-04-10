@@ -1,4 +1,5 @@
 import Tkinter as tk
+import ctypes
 import os
 import threading
 import time
@@ -30,6 +31,8 @@ class MainGUI:
         self.canvas.configure(background="black", highlightthickness=0)
 
         self.video_frame = tk.Frame(self.window, bg="black")
+        x11 = ctypes.cdll.LoadLibrary('libX11.so')
+        x11.XInitThreads()
         self.vlc_instance, self.vlc_media_player_instance = self._create_vlc_instance()
 
         self.window.bind("<F11>", self.toggle_fullscreen)

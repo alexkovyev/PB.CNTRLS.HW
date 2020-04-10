@@ -1,6 +1,6 @@
+import Queue
 import threading
 
-import Queue
 import serial
 
 

@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 from Box import Box
-from LED.LED import ON_ORANGE_PI
+from dispenser.main.LED.LED import ON_ORANGE_PI
 from utils import *
 
 
