@@ -1,4 +1,8 @@
 class Validator(object):
+    """
+    This class stores validation function and range of parameters this function apply to.
+    """
+
     def __init__(self, function, start_id, end_id=None):
         self.function = function
         self.start = start_id

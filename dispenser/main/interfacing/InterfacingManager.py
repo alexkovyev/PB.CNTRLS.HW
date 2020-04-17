@@ -37,8 +37,7 @@ class InterfacingManager(threading.Thread):
                             raise MessageFormatError(error)
                         self.messages_q.put(MessageWrapper(message))
                 except MessageFormatError as e:
-                    print
-                    "An error occurenced while parsing message '{}':\n{}".format(raw_msg, e)
+                    print "An error occurenced while parsing message '{}':\n{}".format(raw_msg, e)
 
     def callbacks_routine(self):
         while not self.die:
@@ -49,8 +48,7 @@ class InterfacingManager(threading.Thread):
                 self.messages_q.put(message)
 
     def run(self):
-        if self.bridge:
-            self.bridge.start()
+        self.bridge.start()
         parser_thread = threading.Thread(target=self.parser_routine)
         parser_thread.daemon = True
         callbacks_thread = threading.Thread(target=self.callbacks_routine)
@@ -60,8 +58,7 @@ class InterfacingManager(threading.Thread):
 
     def send(self, message):
         message_str = message.to_string()
-        if self.bridge:
-            self.bridge.send(message_str)
+        self.bridge.send(message_str)
         print "Message sent:", message_str
 
     def join(self):

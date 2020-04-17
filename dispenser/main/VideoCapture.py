@@ -30,8 +30,7 @@ class VideoCapture(object):
         while True:
             ret, frame = self.cap.read()
             if not ret:
-                print
-                "[ERROR]: Cannot read frame, video capture stopped"
+                print "[ERROR]: Cannot read frame, video capture stopped"
                 break
             if not self.q.empty():
                 try:

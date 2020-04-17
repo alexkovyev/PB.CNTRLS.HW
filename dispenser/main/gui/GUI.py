@@ -38,6 +38,9 @@ class MainGUI:
         self.window.bind("<F11>", self.toggle_fullscreen)
         self.fullScreenState = True
 
+        # This field is used to store time when display content showed and duration of the show time
+        # The format is {"content type": (start time in ms, duration in ms)}
+        # There are 3 types of content: text, image, video
         self.time_limits = {}
 
         time_routine_th = threading.Thread(target=self._time_routine)

@@ -18,15 +18,17 @@ class QRScanner(serial.Serial, threading.Thread, Queue.Queue):
         self.port = port
 
         self.open()
+        self.init_scanner()
+        self.die = False
+
+    def init_scanner(self):
         packet = bytearray([0x7E, 0x00, 0x08, 0x01, 0x00, 0x1A, 0x60, 0xAB, 0xCD])
         self.write(packet)
-
-        self.die = False
 
     def scan(self):
         self.read_all()
         header = bytearray(self.read(3))
-        if [int(x) for x in header[:2]] != [04, 00]:
+        if [int(x) for x in header[:2]] != [04, 00]:  # Check the header
             self.read_all()
             return ""
 

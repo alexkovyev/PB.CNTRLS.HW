@@ -73,20 +73,11 @@ class LitteringDetector(object):
     # https://stackoverflow.com/questions/44752240/how-to-remove-shadow-from-scanned-images-using-opencv/44752405#44752405
     @staticmethod
     def normalize_image(img):
-        rgb_planes = cv2.split(img)
-
-        result_planes = []
-        result_norm_planes = []
-        for plane in rgb_planes:
-            dilated_img = cv2.dilate(plane, np.ones((7, 7), np.uint8))
-            bg_img = cv2.medianBlur(dilated_img, 21)
-            diff_img = 255 - cv2.absdiff(plane, bg_img)
-            norm_img = cv2.normalize(diff_img, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-            result_planes.append(diff_img)
-            result_norm_planes.append(norm_img)
-
-        result_norm = cv2.merge(result_norm_planes)
-
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        dilated_img = cv2.dilate(img_gray, np.ones((7, 7), np.uint8))
+        bg_img = cv2.medianBlur(dilated_img, 21)
+        diff_img = 255 - cv2.absdiff(img_gray, bg_img)
+        norm_img = cv2.normalize(diff_img, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
         # https://stackoverflow.com/a/41075028/9577873
         '''
         lab = cv2.cvtColor(result_norm, cv2.COLOR_BGR2LAB)
@@ -96,7 +87,7 @@ class LitteringDetector(object):
         limg = cv2.merge((cl, a, b))
         final = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
         '''
-        return result_norm
+        return norm_img
 
     @staticmethod
     def prepare_mask(mask):
@@ -104,18 +95,17 @@ class LitteringDetector(object):
         closing_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         erode_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 
-        res = cv2.erode(mask, erode_kernel)
-        res = cv2.morphologyEx(res, cv2.MORPH_OPEN, opening_kernel)
+        res = cv2.morphologyEx(mask, cv2.MORPH_OPEN, opening_kernel)
+        res = cv2.erode(res, erode_kernel)
         res = cv2.morphologyEx(res, cv2.MORPH_CLOSE, closing_kernel)
         # res = cv2.dilate(res, opening_kernel)
-
         return res
 
     def extract_contours(self, mask):
         if not ON_ORANGE_PI:
-            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         else:
-            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            _, contours, _ = cv2.findContours(mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         # contours = [cnt for cnt in contours if cv2.contourArea(cnt) > self.min_contour_area]
         return contours
 
@@ -170,19 +160,26 @@ class LitteringDetector(object):
         last_len = len(self.boxes)
 
         prepared_img = self.normalize_image(img)
-        # cv2.imshow("prepared", prepared_img)
         fg_mask = self.get_foreground(prepared_img)
-        # cv2.imshow("fg", fg_mask)
         mask = self.prepare_mask(fg_mask)
-        # cv2.imshow("mask", mask)
         # cv2.waitKey(0)
         contours = self.extract_contours(mask)
         boxes = self.get_bounding_boxes(contours)
         self.update_boxes(boxes)
 
-        # self.draw_boxes(img, self.boxes)
-        # cv2.imshow("img", img)
-        # cv2.waitKey(1)
+        """
+        # For debug
+        self.draw_boxes(img, self.boxes)
+        cv2.imshow("img", img)
+        key = cv2.waitKey(1)
+
+        if key == 1048691: # s
+            print "saved"
+            cv2.imwrite("orig.png", img)
+            cv2.imwrite("normalized.png", prepared_img)
+            cv2.imwrite("mask.png", mask)
+            cv2.imwrite("fg.png", fg_mask)
+        """
 
         if len(self.boxes) > 0:
             self.littered_frames += 1

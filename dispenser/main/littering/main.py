@@ -7,7 +7,7 @@ cap = cv2.VideoCapture(0)
 
 width = int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
 height = int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-out = cv2.VideoWriter('result_video.avi', cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'), 10, (width, height))
+# out = cv2.VideoWriter('result_video.avi', cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'), 10, (width, height))
 
 img = None
 for i in range(5):
@@ -31,7 +31,7 @@ while True:
     cv2.putText(img, "Littered" if littered else "Not littered", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 1,
                 (0, 0, 255) if littered else (0, 255, 0), 2)
 
-    cv2.imshow("img", img)
-    out.write(img)
+    # cv2.imshow("img", img)
+    # out.write(img)
 
-    cv2.waitKey(50)
+    # cv2.waitKey(50)

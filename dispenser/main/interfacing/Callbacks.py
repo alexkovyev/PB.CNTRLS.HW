@@ -16,6 +16,7 @@ class Callbacks(object):
             return False
 
         callbacks = self.callbacks[message.header.command_name]
+        # The * sign indicates that the callback should be called for every command
         if "*" in self.callbacks:
             callbacks += self.callbacks["*"]
         for callback in callbacks:

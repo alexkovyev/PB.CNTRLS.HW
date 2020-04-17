@@ -10,7 +10,7 @@ if ON_ORANGE_PI:
 from LEDMode import *
 
 
-def translate(value, leftMin, leftMax, rightMin, rightMax):
+def rescale(value, leftMin, leftMax, rightMin, rightMax):
     # Figure out how 'wide' each range is
     leftSpan = leftMax - leftMin
     rightSpan = rightMax - rightMin
@@ -23,6 +23,10 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
 
 
 class LED(object):
+    """
+    Class that is responsible for controlling LED strip.
+    """
+
     def __init__(self):
         super(LED, self).__init__()
 
@@ -45,7 +49,7 @@ class LED(object):
                 wiringpi.softPwmCreate(pin, 0, 100)
 
     def set_color(self, color, value):
-        scaled_val = translate(value, 0, 255, 0, 100)
+        scaled_val = rescale(value, 0, 255, 0, 100)
         # print color, int(scaled_val)
         if ON_ORANGE_PI:
             wiringpi.softPwmWrite(self.pins[color], int(scaled_val))

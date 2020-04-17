@@ -12,10 +12,15 @@ from interfacing.InterfacingManager import InterfacingManager
 from interfacing.Message.Message import Message
 from interfacing.Validator import Validator
 from littering.LitteringDetector import LitteringDetector
-from qr.QR_scanner import QRScanner
+from qr.QRScanner import QRScanner
 
 
 class Dispenser(threading.Thread):
+    """
+    The main class that handles everything dispenser unit should do.
+    It contains all modules, defines validators and callbacks for external commands.
+    """
+
     main_node_name = "PC"
 
     def __init__(self, serial_port="/dev/ttyS0"):
@@ -49,13 +54,14 @@ class Dispenser(threading.Thread):
 
         self.dispensed_id = None
 
-        self.die = False
+        self.die = False  # Flag to stop all threads 'smoothly'
 
         self.led.die = self.die
         if ON_ORANGE_PI:
             self.qr_scanner.die = self.die
         self.interfacing.die = self.die
 
+    # Callbacks ->
     def add_light_mode(self, message):
         mode = LEDMode()
         parameters = message.parameters.parameters
@@ -94,8 +100,10 @@ class Dispenser(threading.Thread):
             res.parameters.append(int(littered))
         self.interfacing.send(res)
 
+    # Command, that the controller sends before issuing
     def will_dispense(self, message):
         img = self.video_capture.read()
+        # Train background to detect when will user pick his order up
         self.littering_detector.train_background(img)
 
     def dispensed(self, message):
@@ -105,6 +113,26 @@ class Dispenser(threading.Thread):
         # cv2.imwrite(img_name, img)
         self.dispensed_id = message.parameters.parameters[0]
 
+    def _update_last_action(self, message):
+        self.last_action = current_ms_time()
+
+    def add_callbacks(self):
+        self.interfacing.callacks.add("add_light_mode", self.add_light_mode)
+        self.interfacing.callacks.add("set_light_mode", self.set_light_mode)
+
+        self.interfacing.callacks.add("set_display_text", self.set_display_text)
+        self.interfacing.callacks.add("set_display_image", self.set_display_image)
+        self.interfacing.callacks.add("set_display_video", self.set_display_video)
+
+        self.interfacing.callacks.add("is_littered", self.is_littered)
+        self.interfacing.callacks.add("will_dispense", self.will_dispense)
+        self.interfacing.callacks.add("dispensed", self.dispensed)
+
+        self.interfacing.callacks.add("*", self._update_last_action)
+
+    # <- Callbacks
+
+    # Validators ->
     def add_light_mode_validators(self):
         name_validator = Validator(Validators.check_str, 0)
         rgb_validator = Validator(Validators.check_bool, 1, 4)
@@ -149,22 +177,7 @@ class Dispenser(threading.Thread):
 
         self.dispensed_validators()
 
-    def _update_last_action(self, message):
-        self.last_action = current_ms_time()
-
-    def add_callbacks(self):
-        self.interfacing.callacks.add("add_light_mode", self.add_light_mode)
-        self.interfacing.callacks.add("set_light_mode", self.set_light_mode)
-
-        self.interfacing.callacks.add("set_display_text", self.set_display_text)
-        self.interfacing.callacks.add("set_display_image", self.set_display_image)
-        self.interfacing.callacks.add("set_display_video", self.set_display_video)
-
-        self.interfacing.callacks.add("is_littered", self.is_littered)
-        self.interfacing.callacks.add("will_dispense", self.will_dispense)
-        self.interfacing.callacks.add("dispensed", self.dispensed)
-
-        self.interfacing.callacks.add("*", self._update_last_action)
+    # <- Validators
 
     @staticmethod
     def validate_qr_code(code):
@@ -186,6 +199,7 @@ class Dispenser(threading.Thread):
                 else:
                     print "Wrong QR code format:", qr_data
                     if "wrong_qr" in self.led.modes:
+                        # TODO: use some variables to store the messages
                         self.gui.set_text("Ошибка при считывании QR кода.\nПожалуйста, попробуйте снова.", 3000)
                         self.led.set_mode("wrong_qr")
 
