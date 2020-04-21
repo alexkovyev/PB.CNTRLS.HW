@@ -2,7 +2,7 @@
 // Created by prostoichelovek on 15.04.2020.
 //
 
-#include "InterfacingManager.h"
+#include "InterfacingManager/InterfacingManager.h"
 
 namespace Interfacing {
 

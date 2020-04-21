@@ -2,9 +2,9 @@
 // Created by prostoichelovek on 14.04.2020.
 //
 
-#include <InterfacingManager/utils.hpp>
-#include "Message.h"
-#include "Symbols.h"
+#include "InterfacingManager/utils.hpp"
+#include "InterfacingManager/Message/Message.h"
+#include "InterfacingManager/Message/Symbols.h"
 
 namespace Interfacing {
     namespace Messages {

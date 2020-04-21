@@ -6,10 +6,10 @@
 #define ARDU_INTERFACING_MANAGER_MESSAGEREADER_H
 
 
-#include "InterfacingManager/Message/Message.h"
-#include "InterfacingManager/Message/Symbols.h"
+#include "Message/Message.h"
+#include "Message/Symbols.h"
 #include "utils.hpp"
-#include "string"
+#include <ArduinoSTL.h>
 
 namespace Interfacing {
 

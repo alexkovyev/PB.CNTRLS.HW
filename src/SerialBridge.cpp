@@ -2,7 +2,7 @@
 // Created by prostoichelovek on 15.04.2020.
 //
 
-#include "SerialBridge.h"
+#include "InterfacingManager/SerialBridge.h"
 
 namespace Interfacing {
 

@@ -6,7 +6,7 @@
 #define ARDU_INTERFACING_MANAGER_PARAMETERSVALIDATOR_H
 
 
-#include "InterfacingManager/Message/Message.h"
+#include "Message/Message.h"
 
 namespace Interfacing {
 

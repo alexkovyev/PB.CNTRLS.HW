@@ -7,11 +7,7 @@
 
 
 #include <Arduino.h>
-#include "ArduinoSTL.h"
-// #include <ArduinoSTL.h>
-
-#include "InterfacingManager/MyString.hpp"
-#include "string"
+#include <ArduinoSTL.h>
 
 namespace Interfacing {
     namespace Messages {

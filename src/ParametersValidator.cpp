@@ -2,7 +2,7 @@
 // Created by prostoichelovek on 16.04.2020.
 //
 
-#include "ParametersValidator.h"
+#include "InterfacingManager/ParametersValidator.h"
 
 namespace Interfacing {
 

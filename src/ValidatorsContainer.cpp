@@ -2,7 +2,7 @@
 // Created by prostoichelovek on 16.04.2020.
 //
 
-#include "ValidatorsContainer.h"
+#include "InterfacingManager/ValidatorsContainer.h"
 
 namespace Interfacing {
 

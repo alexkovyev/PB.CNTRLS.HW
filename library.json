@@ -1,0 +1,28 @@
+{
+  "name": "InterfacingManager",
+  "keywords": "serial, interfacing manager, interfacing",
+  "description": "Simple library for interfacing through a serial port using the custom protocol.",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:alexkovyev/PB.CNTRLS.HW.git",
+    "branch": "13_arduino_interfacing_manager\n"
+  },
+  "authors": [
+    {
+      "name": "Andrey Lungryn",
+      "email": "iam.prostoi.chelovek@gmail.com",
+      "url": "https://github.com/prostoiChelovek",
+      "maintainer": true
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "ArduinoSTL",
+      "authors": "Mike Matera",
+      "frameworks": "arduino"
+    }
+  ],
+  "version": "1.0.0",
+  "frameworks": "arduino",
+  "platforms": "*"
+}
