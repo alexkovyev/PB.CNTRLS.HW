@@ -22,7 +22,7 @@ namespace Interfacing {
 
     bool ParametersValidator::validate(const Messages::Message &msg) const {
         if (!fn) {
-            return false;
+            return true;
         }
         if (msg.parameters.size() < end_idx) {
             return false;

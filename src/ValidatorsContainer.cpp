@@ -24,7 +24,7 @@ namespace Interfacing {
 
     bool ValidatorsContainer::validate(const Messages::Message &msg) const {
         if (!validators.has_key(msg.command_name)) {
-            return false;
+            return true;
         }
         for (const auto &validator : validators[msg.command_name]) {
             bool result = validator(msg);

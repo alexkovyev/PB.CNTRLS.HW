@@ -5,7 +5,7 @@
 #ifndef ARDU_INTERFACING_MANAGER_UTILS_HPP
 #define ARDU_INTERFACING_MANAGER_UTILS_HPP
 
-#include <ArduinoSTL.h>
+#include <Arduino.h>
 #include <ArduinoSTL.h>
 
 namespace Interfacing {
