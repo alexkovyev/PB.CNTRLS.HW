@@ -1,4 +1,5 @@
 # coding=utf-8
+import signal
 import threading
 
 from Dispenser import Dispenser
@@ -46,14 +47,14 @@ dispenser.start()
 
 def cli():
     try:
-        while True:
+        while not dispenser.die:
             message = raw_input()
             dispenser.interfacing.raw_messages_q.put(message)
             # time.sleep(6.5)
             # set_light_mode_msg = "#[Dispenser;set_light_mode](blink)#"
             # dispenser.interfacing.raw_messages_q.put(set_light_mode_msg)
     except KeyboardInterrupt:
-        dispenser.join()
+        dispenser.stop()
 
 
 def demo():
@@ -64,37 +65,40 @@ def demo():
     dispenser.interfacing.raw_messages_q.put("#[Dispenser;add_light_mode](littered;1;0;0;25;255;0.25;0.5;0.25;0.5;3)#")
     dispenser.interfacing.raw_messages_q.put("#[Dispenser;add_light_mode](none;0;0;0;0;0;0;0;0;0;0)#")
 
-    msgs_q = dispenser.interfacing.bridge.send_q
-    qr_code = None
-    while True:
-        if not msgs_q.empty():
-            msg_raw = msgs_q.get()
-            msg = Message(msg_raw)
+    try:
+        msgs_q = dispenser.interfacing.bridge.send_q
+        qr_code = None
+        while not dispenser.die:
+            if not msgs_q.empty():
+                msg_raw = msgs_q.get()
+                msg = Message(msg_raw)
 
-            if msg.header.command_name == "qr_scanned":
-                dispenser.interfacing.raw_messages_q.put("#[Dispenser;is_littered]()#")
-                dispenser.interfacing.raw_messages_q.put(
-                    "#[Dispenser;set_display_text](Пожалуйста, подождите...;0;15;255;255;255)#")
-                qr_code = msg.parameters[0]
-            elif msg.header.command_name == "is_littered":
-                if msg.parameters[0] == "1":
-                    dispenser.interfacing.raw_messages_q.put("#[Dispenser;set_light_mode](littered)#")
+                if msg.header.command_name == "qr_scanned":
+                    dispenser.interfacing.raw_messages_q.put("#[Dispenser;is_littered]()#")
                     dispenser.interfacing.raw_messages_q.put(
-                        "#[Dispenser;set_display_text](Модуль загрязнён!;2000;15;255;255;255)#")
-                else:
-                    dispenser.interfacing.raw_messages_q.put("#[Dispenser;will_dispense]()#")
-                    dispenser.interfacing.raw_messages_q.put("#[Dispenser;set_light_mode](wait)#")
+                        "#[Dispenser;set_display_text](Пожалуйста, подождите...;0;15;255;255;255)#")
+                    qr_code = msg.parameters[0]
+                elif msg.header.command_name == "is_littered":
+                    if msg.parameters[0] == "1":
+                        dispenser.interfacing.raw_messages_q.put("#[Dispenser;set_light_mode](littered)#")
+                        dispenser.interfacing.raw_messages_q.put(
+                            "#[Dispenser;set_display_text](Модуль загрязнён!;2000;15;255;255;255)#")
+                    else:
+                        dispenser.interfacing.raw_messages_q.put("#[Dispenser;will_dispense]()#")
+                        dispenser.interfacing.raw_messages_q.put("#[Dispenser;set_light_mode](wait)#")
+                        dispenser.interfacing.raw_messages_q.put(
+                            "#[Dispenser;set_display_text](Ожидайте выдачи!;0;15;255;255;255)#")
+                        raw_input("press any key...")
+                        dispenser.interfacing.raw_messages_q.put("#[Dispenser;dispensed]({})#".format(qr_code))
+                        dispenser.interfacing.raw_messages_q.put("#[Dispenser;set_light_mode](dispensed)#")
+                        dispenser.interfacing.raw_messages_q.put(
+                            "#[Dispenser;set_display_text](Приятного аппетита!;0;15;255;255;255)#")
+                elif msg.header.command_name == "picked_up":
                     dispenser.interfacing.raw_messages_q.put(
-                        "#[Dispenser;set_display_text](Ожидайте выдачи!;0;15;255;255;255)#")
-                    raw_input("press any key...")
-                    dispenser.interfacing.raw_messages_q.put("#[Dispenser;dispensed]({})#".format(qr_code))
-                    dispenser.interfacing.raw_messages_q.put("#[Dispenser;set_light_mode](dispensed)#")
-                    dispenser.interfacing.raw_messages_q.put(
-                        "#[Dispenser;set_display_text](Приятного аппетита!;0;15;255;255;255)#")
-            elif msg.header.command_name == "picked_up":
-                dispenser.interfacing.raw_messages_q.put(
-                    "#[Dispenser;set_display_text](Наслаждайтесь!;1000;15;255;255;255)#")
-                dispenser.interfacing.raw_messages_q.put("#[Dispenser;set_light_mode](none)#")
+                        "#[Dispenser;set_display_text](Наслаждайтесь!;1000;15;255;255;255)#")
+                    dispenser.interfacing.raw_messages_q.put("#[Dispenser;set_light_mode](none)#")
+    except KeyboardInterrupt:
+        dispenser.stop()
 
 
 cli_th = threading.Thread(target=cli)
@@ -105,4 +109,9 @@ demo_th = threading.Thread(target=demo)
 demo_th.daemon = True
 demo_th.start()
 
-dispenser.gui.window.mainloop()
+signal.signal(signal.SIGINT, lambda a, b: dispenser.stop())
+
+try:
+    dispenser.gui.window.mainloop()
+except KeyboardInterrupt:
+    dispenser.stop()

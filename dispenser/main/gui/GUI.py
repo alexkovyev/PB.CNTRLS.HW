@@ -1,6 +1,7 @@
 import Tkinter as tk
 import ctypes
 import os
+import thread
 import threading
 import time
 from PIL import ImageTk, Image
@@ -42,6 +43,8 @@ class MainGUI:
         # The format is {"content type": (start time in ms, duration in ms)}
         # There are 3 types of content: text, image, video
         self.time_limits = {}
+
+        self.die = False
 
         time_routine_th = threading.Thread(target=self._time_routine)
         time_routine_th.daemon = True
@@ -116,24 +119,28 @@ class MainGUI:
         self.vlc_media_player_instance.play()
 
     def _time_routine(self):
-        while True:
-            fn = None
-            key = None
-            if "video" in self.time_limits:
-                key = "video"
-                fn = self.hide_video
-            elif "image" in self.time_limits:
-                key = "image"
-                fn = self.hide_image
-            elif "text" in self.time_limits:
-                key = "text"
-                fn = self.hide_label
+        try:
+            while not self.die:
+                fn = None
+                key = None
+                if "video" in self.time_limits:
+                    key = "video"
+                    fn = self.hide_video
+                elif "image" in self.time_limits:
+                    key = "image"
+                    fn = self.hide_image
+                elif "text" in self.time_limits:
+                    key = "text"
+                    fn = self.hide_label
 
-            if key is not None:
-                limit = self.time_limits[key]
-                if limit[1] != 0 and current_ms_time() - limit[0] >= limit[1]:
-                    del self.time_limits[key]
-                    fn()
+                if key is not None:
+                    limit = self.time_limits[key]
+                    if limit[1] != 0 and current_ms_time() - limit[0] >= limit[1]:
+                        del self.time_limits[key]
+                        fn()
+        except KeyboardInterrupt:
+            self.die = True
+            thread.interrupt_main()
 
     def toggle_fullscreen(self, event):
         self.fullScreenState = not self.fullScreenState

@@ -1,4 +1,5 @@
 import Queue
+import thread
 import threading
 
 import serial
@@ -36,9 +37,13 @@ class SerialBridge(serial.Serial, threading.Thread):
         self.send_q.put(msg)
 
     def run(self):
-        if self.port is not None:
-            while not self.die:
-                self.loop()
+        try:
+            if self.port is not None:
+                while not self.die:
+                    self.loop()
+        except KeyboardInterrupt:
+            self.join()
+            thread.interrupt_main()
 
     def join(self):
         self.die = True

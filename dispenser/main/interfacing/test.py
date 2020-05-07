@@ -46,4 +46,4 @@ try:
     while True:
         pass
 except KeyboardInterrupt:
-    interfacing.join()
+    interfacing.stop()

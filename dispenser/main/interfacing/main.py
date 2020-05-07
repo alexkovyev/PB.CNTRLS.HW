@@ -26,4 +26,4 @@ try:
 
         time.sleep(2)
 except KeyboardInterrupt:
-    bridge.join()
+    bridge.stop()

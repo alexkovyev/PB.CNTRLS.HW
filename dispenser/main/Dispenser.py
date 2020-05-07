@@ -1,5 +1,8 @@
 # coding=utf-8
+import os
+import thread
 import threading
+import time
 from datetime import datetime
 
 import cv2
@@ -15,7 +18,7 @@ from littering.LitteringDetector import LitteringDetector
 from qr.QRScanner import QRScanner
 
 
-class Dispenser(threading.Thread):
+class Dispenser(object):
     """
     The main class that handles everything dispenser unit should do.
     It contains all modules, defines validators and callbacks for external commands.
@@ -24,8 +27,6 @@ class Dispenser(threading.Thread):
     main_node_name = "PC"
 
     def __init__(self, serial_port="/dev/ttyS0"):
-        super(Dispenser, self).__init__()
-
         self.node_name = "Dispenser"
 
         self.gui = MainGUI()
@@ -55,11 +56,6 @@ class Dispenser(threading.Thread):
         self.dispensed_id = None
 
         self.die = False  # Flag to stop all threads 'smoothly'
-
-        self.led.die = self.die
-        if ON_ORANGE_PI:
-            self.qr_scanner.die = self.die
-        self.interfacing.die = self.die
 
     # Callbacks ->
     def add_light_mode(self, message):
@@ -186,65 +182,73 @@ class Dispenser(threading.Thread):
         return True
 
     def qr_handler_routine(self):
-        while not self.die:
-            if not self.qr_scanner.empty():
-                self._update_last_action(None)
-                qr_data = self.qr_scanner.get()
-                if self.validate_qr_code(qr_data):
-                    message = Message()
-                    message.header.node_name = Dispenser.main_node_name
-                    message.header.command_name = "qr_scanned"
-                    message.parameters.append(qr_data)
-                    self.interfacing.send(message)
-                else:
-                    print "Wrong QR code format:", qr_data
-                    if "wrong_qr" in self.led.modes:
-                        # TODO: use some variables to store the messages
-                        self.gui.set_text("Ошибка при считывании QR кода.\nПожалуйста, попробуйте снова.", 3000)
-                        self.led.set_mode("wrong_qr")
+        try:
+            while not self.die:
+                if not self.qr_scanner.empty():
+                    self._update_last_action(None)
+                    qr_data = self.qr_scanner.get()
+                    if self.validate_qr_code(qr_data):
+                        message = Message()
+                        message.header.node_name = Dispenser.main_node_name
+                        message.header.command_name = "qr_scanned"
+                        message.parameters.append(qr_data)
+                        self.interfacing.send(message)
+                    else:
+                        print "Wrong QR code format:", qr_data
+                        if "wrong_qr" in self.led.modes:
+                            # TODO: use some variables to store the messages` texts
+                            self.gui.set_text("Ошибка при считывании QR кода.\nПожалуйста, попробуйте снова.", 3000)
+                            self.led.set_mode("wrong_qr")
+        except KeyboardInterrupt:
+            self.stop()
 
     def idle_handler_routine(self):
-        while not self.die:
-            if current_ms_time() - self.last_action > self.idle_time:
-                if "idle" in self.led.modes and self.led.current_mode.value not in ["wait", "dispensed"]:
-                    self.led.set_mode("idle")
+        try:
+            while not self.die:
+                if current_ms_time() - self.last_action > self.idle_time:
+                    if "idle" in self.led.modes and self.led.current_mode.value not in ["wait", "dispensed"]:
+                        self.led.set_mode("idle")
+        except KeyboardInterrupt:
+            self.stop()
 
     def video_capture_routine(self):
-        while not self.die:
-            if self.dispensed_id:
-                print "Waiting for pick up:", self.dispensed_id
-                vid_name = "{}/{}_{}.avi".format(self.video_directory, self.dispensed_id,
-                                                 datetime.today().strftime('%Y-%m-%d-%H:%M:%S'))
-                if not ON_ORANGE_PI:
-                    furcc = cv2.cv.CV_FOURCC('M', 'J', 'P', 'G')
-                else:
-                    furcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
-                video_writer = cv2.VideoWriter(vid_name, furcc, 5,
-                                               (self.video_capture.w, self.video_capture.h))
-                littered = True
-                i = 0
-                while littered:
-                    img = self.video_capture.read()
-                    if not i % 3:
-                        littered = self.littering_detector(img)
-                    video_writer.write(img)
-                    i += 1
-                    cv2.waitKey(2)
-                for i in range(5):
-                    img = self.video_capture.read()
-                    video_writer.write(img)
-                    cv2.waitKey(1)
-                video_writer.release()
-                print "Video saved:", vid_name
-                self.dispensed_id = None
+        try:
+            while not self.die:
+                if self.dispensed_id:
+                    print "Waiting for pick up:", self.dispensed_id
+                    vid_name = "{}/{}_{}.avi".format(self.video_directory, self.dispensed_id,
+                                                     datetime.today().strftime('%Y-%m-%d-%H:%M:%S'))
+                    if not ON_ORANGE_PI:
+                        furcc = cv2.cv.CV_FOURCC('M', 'J', 'P', 'G')
+                    else:
+                        furcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
+                    video_writer = cv2.VideoWriter(vid_name, furcc, 5,
+                                                   (self.video_capture.w, self.video_capture.h))
+                    littered = True
+                    i = 0
+                    while littered:
+                        img = self.video_capture.read()
+                        if not i % 3:
+                            littered = self.littering_detector(img)
+                        video_writer.write(img)
+                        i += 1
+                        cv2.waitKey(2)
+                    for i in range(5):
+                        img = self.video_capture.read()
+                        video_writer.write(img)
+                        cv2.waitKey(1)
+                    video_writer.release()
+                    print "Video saved:", vid_name
+                    self.dispensed_id = None
 
-                # I don`t want to add another thread for that
-                msg = Message()
-                msg.header.node_name = Dispenser.main_node_name
-                msg.header.command_name = "picked_up"
-                self.interfacing.send(msg)
+                    msg = Message()
+                    msg.header.node_name = Dispenser.main_node_name
+                    msg.header.command_name = "picked_up"
+                    self.interfacing.send(msg)
+        except KeyboardInterrupt:
+            self.stop()
 
-    def run(self):
+    def start(self):
         self.led.start()
         self.interfacing.start()
         if ON_ORANGE_PI:
@@ -262,6 +266,14 @@ class Dispenser(threading.Thread):
         video_capture_thread.daemon = True
         video_capture_thread.start()
 
-    def join(self):
+    def stop(self):
         self.die = True
-        threading.Thread.join(self, 3)
+        self.gui.die = True
+        self.led.stop()
+        self.interfacing.stop()
+        if ON_ORANGE_PI:
+            self.qr_scanner.die = True
+
+        time.sleep(0.2)
+        thread.exit()
+        os._exit(0)

@@ -1,4 +1,5 @@
 import Queue
+import thread
 import threading
 
 from Callbacks import Callbacks, MessageWrapper
@@ -8,10 +9,8 @@ from ParametersValidator import ParametersValidator
 from SerialBridge import SerialBridge
 
 
-class InterfacingManager(threading.Thread):
+class InterfacingManager(object):
     def __init__(self, serial_port, node_name):
-        threading.Thread.__init__(self)
-
         self.node_name = node_name
 
         self.raw_messages_q = Queue.Queue()
@@ -26,28 +25,36 @@ class InterfacingManager(threading.Thread):
         self.validators = ParametersValidator()
 
     def parser_routine(self):
-        while not self.die:
-            if not self.raw_messages_q.empty():
-                raw_msg = self.raw_messages_q.get()
-                try:
-                    message = Message(raw_msg)
-                    if message.header.node_name == self.node_name:
-                        error = self.validators(message)
-                        if error:
-                            raise MessageFormatError(error)
-                        self.messages_q.put(MessageWrapper(message))
-                except MessageFormatError as e:
-                    print "An error occurenced while parsing message '{}':\n{}".format(raw_msg, e)
+        try:
+            while not self.die:
+                if not self.raw_messages_q.empty():
+                    raw_msg = self.raw_messages_q.get()
+                    try:
+                        message = Message(raw_msg)
+                        if message.header.node_name == self.node_name:
+                            error = self.validators(message)
+                            if error:
+                                raise MessageFormatError(error)
+                            self.messages_q.put(MessageWrapper(message))
+                    except MessageFormatError as e:
+                        print "An error occurenced while parsing message '{}':\n{}".format(raw_msg, e)
+        except KeyboardInterrupt:
+            self.stop()
+            thread.interrupt_main()
 
     def callbacks_routine(self):
-        while not self.die:
-            if not self.messages_q.empty():
-                message = self.messages_q.get()
-                if not message.processed:
-                    self.callacks(message.get())
-                self.messages_q.put(message)
+        try:
+            while not self.die:
+                if not self.messages_q.empty():
+                    message = self.messages_q.get()
+                    if not message.processed:
+                        self.callacks(message.get())
+                    self.messages_q.put(message)
+        except KeyboardInterrupt:
+            self.stop()
+            thread.interrupt_main()
 
-    def run(self):
+    def start(self):
         self.bridge.start()
         parser_thread = threading.Thread(target=self.parser_routine)
         parser_thread.daemon = True
@@ -61,6 +68,5 @@ class InterfacingManager(threading.Thread):
         self.bridge.send(message_str)
         print "Message sent:", message_str
 
-    def join(self):
+    def stop(self):
         self.die = True
-        threading.Thread.join(self)

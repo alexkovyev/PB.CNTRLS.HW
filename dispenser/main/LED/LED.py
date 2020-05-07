@@ -1,3 +1,5 @@
+import thread
+
 ON_ORANGE_PI = False
 
 import ctypes
@@ -103,20 +105,27 @@ class LED(object):
             self._colors_slope(mode.max_val, mode.decrease_time, mode.colors, -step)
 
     def _run(self):
-        if ON_ORANGE_PI:
-            self.wiringpi_setup()
-        circles = 0
-        while not self.die:
-            if self.current_mode.value is not None:
-                max_circles = self.modes[self.current_mode.value].max_circles
-                if max_circles != 0 and circles >= max_circles:
-                    break
-            self._loop()
-            circles += 1
+        try:
+            if ON_ORANGE_PI:
+                self.wiringpi_setup()
+            circles = 0
+            while not self.die:
+                if self.current_mode.value is not None:
+                    max_circles = self.modes[self.current_mode.value].max_circles
+                    if max_circles != 0 and circles >= max_circles:
+                        break
+                self._loop()
+                circles += 1
+        except KeyboardInterrupt:
+            self.stop()
+            thread.interrupt_main()
 
-    def join(self):
+    def stop(self):
         self.die = True
-        self.loop_process.join()
+        try:
+            self.loop_process.terminate()
+        except:
+            pass
 
     def start(self):
         self.loop_process.start()
