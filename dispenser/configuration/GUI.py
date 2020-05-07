@@ -235,6 +235,30 @@ class TextControl(tk.Frame):
         self.color_entries.grid(column=0, row=3, sticky="NSEW")
 
 
+class MediaControl(tk.Frame):
+    def __init__(self, root):
+        tk.Frame.__init__(self, root)
+
+        self.select_frame = tk.Frame(self)
+
+        self.type_var = tk.StringVar()
+        self.image_btn = tk.Radiobutton(self.select_frame, text="Изображение", variable=self.type_var, value="I")
+        self.video_btn = tk.Radiobutton(self.select_frame, text="Видео", variable=self.type_var, value="V")
+
+        self.name_var = tk.StringVar()
+        self.name_input = Labeled_entry(self, "Имя", self.name_var, False)
+
+        self.duration_var = tk.StringVar()
+        self.duration_input = Labeled_entry(self, "Длительность (миллисекунд)", self.duration_var)
+
+        self.image_btn.grid(column=0, row=0, sticky="NSEW")
+        self.video_btn.grid(column=1, row=0, sticky="NSEW")
+
+        self.select_frame.grid(column=0, row=0, sticky="NSEW")
+        self.name_input.grid(column=0, row=1, sticky="NSEW")
+        self.duration_input.grid(column=0, row=2, sticky="NSEW")
+
+
 class GUI:
     def __init__(self):
         self.window = tk.Tk()
@@ -244,10 +268,12 @@ class GUI:
 
         self.strip_mode_params = Mode_inputs(self.tabs)
         self.text_control = TextControl(self.tabs)
+        self.media_control = MediaControl(self.tabs)
         # self.qr_mode_params = Mode_inputs(self.tabs)
         # self.mode_params.pack()
         self.tabs.add(self.strip_mode_params, text="лента")
         self.tabs.add(self.text_control, text="текст")
+        self.tabs.add(self.media_control, text="медиа")
         # self.tabs.add(self.qr_mode_params, text="QR")
 
         self.tabs.pack(expand=1, fill="both")
