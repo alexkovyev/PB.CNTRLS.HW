@@ -1,13 +1,21 @@
 # coding=utf-8
 import Tkinter as tk
+import tkMessageBox
 import json
 import os
+import time
 import tkFileDialog
 import ttk
 from math import cos, sin
+import serial.tools.list_ports
 
 # You should probably change this to import dispenser_main/LED/LEDMode.py
 from LEDMode import LEDMode
+
+
+def list_serial_ports():
+    ports = serial.tools.list_ports.comports()
+    return [port for port, desc, hwid in sorted(ports)]
 
 
 class Labeled_entry(tk.Frame):
@@ -208,10 +216,10 @@ class RGBEmtries(tk.Frame):
         self.b_input.grid(column=0, row=2)
 
     def get_rgb(self):
-        return tuple([int(x.get()) for x in [self.r_input, self.g_input, self.b_input]])
+        return [int(x.get()) for x in [self.r_input, self.g_input, self.b_input]]
 
     def get_hex(self):
-        return '#%02x%02x%02x' % self.get_rgb()
+        return '#%02x%02x%02x' % tuple(self.get_rgb())
 
 
 class TextControl(tk.Frame):
@@ -233,6 +241,9 @@ class TextControl(tk.Frame):
         self.duration_input.grid(column=0, row=1, sticky="NSEW")
         self.size_input.grid(column=0, row=2, sticky="NSEW")
         self.color_entries.grid(column=0, row=3, sticky="NSEW")
+
+    def get(self):
+        return self.text_var.get(), int(self.duration_var.get()), int(self.size_var.get()), self.color_entries.get_rgb()
 
 
 class MediaControl(tk.Frame):
@@ -259,10 +270,86 @@ class MediaControl(tk.Frame):
         self.duration_input.grid(column=0, row=2, sticky="NSEW")
 
 
+class PortSelector(tk.Frame):
+    def __init__(self, root, device):
+        tk.Frame.__init__(self, root)
+
+        self.device = device
+
+        self.ports = []
+
+        self.port_var = tk.StringVar()
+        self.port_choice = tk.OptionMenu(self, self.port_var, "", *self.ports)
+
+        self.connect_text_var = tk.StringVar()
+        self.connect_text_var.set("Подключится")
+        self.connect_btn = tk.Button(self, textvariable=self.connect_text_var, command=self.connect)
+        self.refresh_btn = tk.Button(self, text="Обновить", command=self.update_ports_list)
+
+        self.port_choice.grid(column=0, row=0)
+        self.connect_btn.grid(column=1, row=0)
+        self.refresh_btn.grid(column=2, row=0)
+
+    def set_options(self, options):
+        if self.port_var.get() not in options:
+            self.port_var.set("")
+
+        self.port_choice['menu'].delete(0, 'end')  # clear
+
+        for choice in options:
+            self.port_choice['menu'].add_command(label=choice, command=tk._setit(self.port_var, choice))
+
+    def update_ports_list(self):
+        # tkMessageBox.showinfo("Пожалуйста, подождите...", "Идёт сканирование портов")
+        top = tk.Toplevel(self, width=500)
+        top.title('Пожалуйста, подождите...')
+        top.geometry("350x30+30+30")
+        # tk.Message(top, text="Идёт сканирование портов").pack(expand=True)
+        tk.Label(top, text="Идёт сканирование портов").pack(anchor="center", fill="both")
+        self.update_idletasks()
+
+        ports = list_serial_ports()
+
+        for port in ports:
+            self.device.manager.bridge.port = port
+            self.device.manager.bridge.open()
+            time.sleep(2)
+
+            self.device.ping()
+            arrived = self.device.manager.wait_for_new_message(2)
+            if not arrived:
+                ports.remove(port)
+            self.device.manager.bridge.close()
+
+        self.set_options(ports)
+
+        top.destroy()
+
+    def connect(self):
+        if not self.device.manager.bridge.isOpen():
+            try:
+                self.device.manager.bridge.port = self.port_var.get()
+                self.device.manager.bridge.open()
+                self.connect_text_var.set("Отключится")
+                self.port_choice["state"] = "disabled"
+            except serial.serialutil.SerialException as e:
+                print "Cannot connect to port {}: {}".format(self.device.manager.bridge.port, e.strerror)
+                self.update_ports_list()
+        else:
+            self.device.manager.bridge.close()
+            self.port_choice["state"] = "normal"
+            self.connect_text_var.set("Подключится")
+
+
 class GUI:
-    def __init__(self):
+    def __init__(self, device):
+        self.device = device
+
         self.window = tk.Tk()
         self.window.configure(background='white')
+
+        self.port_selector = PortSelector(self.window, self.device)
+        self.port_selector.pack()
 
         self.tabs = ttk.Notebook(self.window)
 
@@ -283,10 +370,13 @@ class GUI:
         self.file_menu = tk.Menu(self.menubar)
         self.file_menu.add_command(label="Сохранить", command=self.save)
         self.file_menu.add_command(label="Загрузить", command=self.load)
-        self.file_menu.add_command(label="Показать", command=None)
+        self.file_menu.add_command(label="Показать", command=self.send_data)
         self.menubar.add_cascade(label="Файл", menu=self.file_menu)
 
         self.window.mainloop()
+
+    def send_data(self):
+        self.device.set_text(*self.text_control.get())
 
     def save(self):
         file_path = tkFileDialog.asksaveasfilename(initialdir=os.getcwd(), title="Save",
