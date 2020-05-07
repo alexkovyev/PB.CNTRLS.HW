@@ -11,23 +11,23 @@ from LEDMode import LEDMode
 
 
 class Labeled_entry(tk.Frame):
-    def __init__(self, parent, label, entry_var):
+    def __init__(self, parent, label, entry_var, numeric=True):
         tk.Frame.__init__(self, parent)
 
         self.label = tk.Label(self, text=label, anchor="w")
         self.entry = tk.Entry(self, textvariable=entry_var)
 
-        validate_cmd = (self.register(self.validate_input),
-                        '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        self.entry.configure(validate='key', validatecommand=validate_cmd)
+        if numeric:
+            validate_cmd = (self.register(self.validate_input),
+                            '%d', '%P')
+            self.entry.configure(validate='key', validatecommand=validate_cmd)
 
         self.label.pack(side="top", fill="x")
         self.entry.pack(side="bottom", fill="x")
 
     @staticmethod
-    def validate_input(action, index, value_if_allowed,
-                       prior_value, text, validation_type, trigger_type, widget_name):
-        if action is "0":
+    def validate_input(action, value_if_allowed):
+        if action is "0": # backspace
             return True
 
         if value_if_allowed:
@@ -191,6 +191,50 @@ class Mode_inputs(tk.Frame):
             color.set(mode.colors[i])
 
 
+class RGBEmtries(tk.Frame):
+    def __init__(self, root):
+        tk.Frame.__init__(self, root)
+
+        self.r_var = tk.StringVar()
+        self.g_var = tk.StringVar()
+        self.b_var = tk.StringVar()
+
+        self.r_input = Labeled_entry(self, "R", self.r_var)
+        self.g_input = Labeled_entry(self, "G", self.g_var)
+        self.b_input = Labeled_entry(self, "B", self.b_var)
+
+        self.r_input.grid(column=0, row=0)
+        self.g_input.grid(column=0, row=1)
+        self.b_input.grid(column=0, row=2)
+
+    def get_rgb(self):
+        return tuple([int(x.get()) for x in [self.r_input, self.g_input, self.b_input]])
+
+    def get_hex(self):
+        return '#%02x%02x%02x' % self.get_rgb()
+
+
+class TextControl(tk.Frame):
+    def __init__(self, root):
+        tk.Frame.__init__(self, root)
+
+        self.text_var = tk.StringVar()
+        self.text_input = Labeled_entry(self, "Текст", self.text_var, False)
+
+        self.duration_var = tk.StringVar()
+        self.duration_input = Labeled_entry(self, "Длительность (миллисекунд)", self.duration_var)
+
+        self.size_var = tk.StringVar()
+        self.size_input = Labeled_entry(self, "Размер", self.size_var)
+
+        self.color_entries = RGBEmtries(self)
+
+        self.text_input.grid(column=0, row=0, sticky="NSEW")
+        self.duration_input.grid(column=0, row=1, sticky="NSEW")
+        self.size_input.grid(column=0, row=2, sticky="NSEW")
+        self.color_entries.grid(column=0, row=3, sticky="NSEW")
+
+
 class GUI:
     def __init__(self):
         self.window = tk.Tk()
@@ -199,9 +243,11 @@ class GUI:
         self.tabs = ttk.Notebook(self.window)
 
         self.strip_mode_params = Mode_inputs(self.tabs)
+        self.text_control = TextControl(self.tabs)
         # self.qr_mode_params = Mode_inputs(self.tabs)
         # self.mode_params.pack()
         self.tabs.add(self.strip_mode_params, text="лента")
+        self.tabs.add(self.text_control, text="текст")
         # self.tabs.add(self.qr_mode_params, text="QR")
 
         self.tabs.pack(expand=1, fill="both")
@@ -209,9 +255,10 @@ class GUI:
         self.menubar = tk.Menu(self.window)
         self.window.config(menu=self.menubar)
         self.file_menu = tk.Menu(self.menubar)
-        self.file_menu.add_command(label="Save", command=self.save)
-        self.file_menu.add_command(label="Load", command=self.load)
-        self.menubar.add_cascade(label="File", menu=self.file_menu)
+        self.file_menu.add_command(label="Сохранить", command=self.save)
+        self.file_menu.add_command(label="Загрузить", command=self.load)
+        self.file_menu.add_command(label="Показать", command=None)
+        self.menubar.add_cascade(label="Файл", menu=self.file_menu)
 
         self.window.mainloop()
 
