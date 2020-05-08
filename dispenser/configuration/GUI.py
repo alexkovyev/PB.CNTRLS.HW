@@ -215,11 +215,21 @@ class RGBEmtries(tk.Frame):
         self.g_input.grid(column=0, row=1)
         self.b_input.grid(column=0, row=2)
 
+    def is_ok(self):
+        try:
+            self.get_rgb()
+            return True
+        except ValueError:
+            return False
+
     def get_rgb(self):
         return [int(x.get()) for x in [self.r_input, self.g_input, self.b_input]]
 
     def get_hex(self):
         return '#%02x%02x%02x' % tuple(self.get_rgb())
+
+    def set(self, values):
+        [x.set(v) for x, v in zip([self.r_var, self.g_var, self.b_var], values)]
 
 
 class TextControl(tk.Frame):
@@ -241,6 +251,9 @@ class TextControl(tk.Frame):
         self.duration_input.grid(column=0, row=1, sticky="NSEW")
         self.size_input.grid(column=0, row=2, sticky="NSEW")
         self.color_entries.grid(column=0, row=3, sticky="NSEW")
+
+    def is_ok(self):
+        return self.text_var.get() and self.duration_var.get() and self.size_var.get()
 
     def get(self):
         return self.text_var.get(), int(self.duration_var.get()), int(self.size_var.get()), self.color_entries.get_rgb()
@@ -269,8 +282,11 @@ class MediaControl(tk.Frame):
         self.name_input.grid(column=0, row=1, sticky="NSEW")
         self.duration_input.grid(column=0, row=2, sticky="NSEW")
 
+    def is_ok(self):
+        return self.duration_var.get()
+
     def get(self):
-        return self.type_var.get() == "I", self.name_var.get(), int(self.duration_var.get())
+        return self.type_var.get(), self.name_var.get(), int(self.duration_var.get())
 
 
 class PortSelector(tk.Frame):
@@ -379,22 +395,20 @@ class GUI:
         self.window.mainloop()
 
     def send_data(self):
-        try:
-            self.device.demo_light_mode(self.strip_mode_params.get_led_mode())
-        except ValueError:
-            pass
 
         try:
-            self.device.set_text(*self.text_control.get())
-        except ValueError:
-            pass
+            current_tab = self.tabs.index("current")
 
-        try:
-            media = self.media_control.get()
-            if media[0]:
-                self.device.set_dispaly_image(media[1], media[2])
-            else:
-                self.device.set_display_video(media[1], media[2])
+            if current_tab == 0:
+                self.device.demo_light_mode(self.strip_mode_params.get_led_mode())
+            elif current_tab == 1:
+                self.device.set_text(*self.text_control.get())
+            elif current_tab == 2:
+                media = self.media_control.get()
+                if media[0] == "I":
+                    self.device.set_dispaly_image(media[1], media[2])
+                else:
+                    self.device.set_display_video(media[1], media[2])
         except ValueError:
             pass
 
@@ -402,14 +416,23 @@ class GUI:
         file_path = tkFileDialog.asksaveasfilename(initialdir=os.getcwd(), title="Save",
                                                    filetypes=(("json files", "*.json"), ("all files", "*.*")))
         if file_path:
-            strip_led_mode = self.strip_mode_params.get_led_mode()
-            # qr_led_mode = self.qr_mode_params.get_led_mode()
-            both = {
-                "strip": strip_led_mode.__dict__,
-                # "qr": qr_led_mode.__dict__
+            led_mode = self.strip_mode_params.get_led_mode()
+            data = {
+                "led": led_mode.__dict__
             }
+
+            if self.text_control.is_ok():
+                text_data = self.text_control.get()
+                text_keys = ["text", "duration", "size", "color"]
+                data["text"] = dict(zip(text_keys, text_data))
+
+            if self.media_control.is_ok():
+                media_data = self.media_control.get()
+                media_keys = ["type", "name", "duration"]
+                data["media"] = dict(zip(media_keys, media_data))
+
             with open(file_path, "w") as f:
-                json.dump(both, f, indent=4)
+                json.dump(data, f, indent=4)
 
     def load(self):
         file_path = tkFileDialog.askopenfilename(initialdir=os.getcwd(), title="Open",
@@ -417,10 +440,18 @@ class GUI:
         if file_path:
             with open(file_path, "r") as f:
                 j = json.load(f)
-                strip_mode = LEDMode()
-                strip_mode.__dict__ = j["strip"]
-                # qr_mode = LEDMode()
-                # qr_mode.__dict__ = j["qr"]
+                led_mode = LEDMode()
+                led_mode.__dict__ = j["led"]
 
-                self.strip_mode_params.set_led_mode(strip_mode)
-                # self.qr_mode_params.set_led_mode(qr_mode)
+                if "text" in j:
+                    text_vars = [x for x in self.text_control.__dict__.keys() if x.endswith("_var")]
+                    text_vars.append("color_entries")
+                    for var in text_vars:
+                        getattr(self.text_control, var).set(j["text"][var.split("_")[0]])
+
+                if "media" in j:
+                    media_vars = [x for x in self.media_control.__dict__.keys() if x.endswith("_var")]
+                    for var in media_vars:
+                        getattr(self.media_control, var).set(j["media"][var.split("_")[0]])
+
+                self.strip_mode_params.set_led_mode(led_mode)
