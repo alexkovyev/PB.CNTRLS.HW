@@ -35,7 +35,7 @@ class Labeled_entry(tk.Frame):
 
     @staticmethod
     def validate_input(action, value_if_allowed):
-        if action is "0": # backspace
+        if action is "0":  # backspace
             return True
 
         if value_if_allowed:
@@ -376,7 +376,8 @@ class GUI:
         self.window.mainloop()
 
     def send_data(self):
-        self.device.set_text(*self.text_control.get())
+        # self.device.set_text(*self.text_control.get())
+        self.device.demo_light_mode(self.strip_mode_params.get_led_mode())
 
     def save(self):
         file_path = tkFileDialog.asksaveasfilename(initialdir=os.getcwd(), title="Save",
