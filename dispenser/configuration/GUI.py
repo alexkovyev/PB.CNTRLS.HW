@@ -269,6 +269,9 @@ class MediaControl(tk.Frame):
         self.name_input.grid(column=0, row=1, sticky="NSEW")
         self.duration_input.grid(column=0, row=2, sticky="NSEW")
 
+    def get(self):
+        return self.type_var.get() == "I", self.name_var.get(), int(self.duration_var.get())
+
 
 class PortSelector(tk.Frame):
     def __init__(self, root, device):
@@ -376,8 +379,24 @@ class GUI:
         self.window.mainloop()
 
     def send_data(self):
-        # self.device.set_text(*self.text_control.get())
-        self.device.demo_light_mode(self.strip_mode_params.get_led_mode())
+        try:
+            self.device.demo_light_mode(self.strip_mode_params.get_led_mode())
+        except ValueError:
+            pass
+
+        try:
+            self.device.set_text(*self.text_control.get())
+        except ValueError:
+            pass
+
+        try:
+            media = self.media_control.get()
+            if media[0]:
+                self.device.set_dispaly_image(media[1], media[2])
+            else:
+                self.device.set_display_video(media[1], media[2])
+        except ValueError:
+            pass
 
     def save(self):
         file_path = tkFileDialog.asksaveasfilename(initialdir=os.getcwd(), title="Save",

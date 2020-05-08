@@ -43,6 +43,7 @@ class Interfacing(object):
         msg.header.command_name = "set_display_image"
         msg.parameters.append(name)
         msg.parameters.append(duration)
+        self.manager.send(msg)
 
     def set_display_video(self, name, duration):
         msg = Message()
@@ -50,3 +51,4 @@ class Interfacing(object):
         msg.header.command_name = "set_display_video"
         msg.parameters.append(name)
         msg.parameters.append(duration)
+        self.manager.send(msg)
