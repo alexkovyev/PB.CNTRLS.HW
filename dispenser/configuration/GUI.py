@@ -12,6 +12,8 @@ import serial.tools.list_ports
 # You should probably change this to import dispenser_main/LED/LEDMode.py
 from LEDMode import LEDMode
 
+from utils import get_hosts_with_port
+
 
 def list_serial_ports():
     ports = serial.tools.list_ports.comports()
@@ -289,6 +291,27 @@ class MediaControl(tk.Frame):
         return self.type_var.get(), self.name_var.get(), int(self.duration_var.get())
 
 
+def set_choice_options(var, choice, options):
+    if var.get() not in options:
+        var.set("")
+
+    choice['menu'].delete(0, 'end')  # clear
+
+    for option in options:
+        choice['menu'].add_command(label=option, command=tk._setit(var, option))
+
+
+class MyMessage(tk.Toplevel):
+    def __init__(self, parent, title, message):
+        tk.Toplevel.__init__(self, parent)
+
+        self.title(title)
+        # self.geometry("350x30+30+30")
+        tk.Message(self, text=message).pack(expand=1)
+        # tk.Label(self, text=message).pack(anchor="center", fill="both")
+        self.update_idletasks()
+
+
 class PortSelector(tk.Frame):
     def __init__(self, root, device):
         tk.Frame.__init__(self, root)
@@ -310,22 +333,11 @@ class PortSelector(tk.Frame):
         self.refresh_btn.grid(column=2, row=0)
 
     def set_options(self, options):
-        if self.port_var.get() not in options:
-            self.port_var.set("")
-
-        self.port_choice['menu'].delete(0, 'end')  # clear
-
-        for choice in options:
-            self.port_choice['menu'].add_command(label=choice, command=tk._setit(self.port_var, choice))
+        set_choice_options(self.port_var, self.port_choice, options)
 
     def update_ports_list(self):
         # tkMessageBox.showinfo("Пожалуйста, подождите...", "Идёт сканирование портов")
-        top = tk.Toplevel(self, width=500)
-        top.title('Пожалуйста, подождите...')
-        top.geometry("350x30+30+30")
-        # tk.Message(top, text="Идёт сканирование портов").pack(expand=True)
-        tk.Label(top, text="Идёт сканирование портов").pack(anchor="center", fill="both")
-        self.update_idletasks()
+        msg = MyMessage(self, 'Пожалуйста, подождите...', "Идёт сканирование портов")
 
         ports = list_serial_ports()
 
@@ -342,7 +354,7 @@ class PortSelector(tk.Frame):
 
         self.set_options(ports)
 
-        top.destroy()
+        msg.destroy()
 
     def connect(self):
         if not self.device.manager.bridge.isOpen():
@@ -360,9 +372,73 @@ class PortSelector(tk.Frame):
             self.connect_text_var.set("Подключится")
 
 
+class SFTPParameters(tk.Toplevel):
+    def __init__(self, parent, sftp_manager):
+        tk.Toplevel.__init__(self, parent)
+        self.sftp_manager = sftp_manager
+
+        self.title = "Настройка SFTP подлкючения"
+
+        self.ips = []
+
+        self.ip_var = tk.StringVar()
+        self.ip_var.set(self.sftp_manager.ip)
+        self.ip_var.trace("w", self.set_ip)
+        self.ip_choice = tk.OptionMenu(self, self.ip_var, "", *self.ips)
+        self.refresh_btn = tk.Button(self, text="Обновить", command=self.update_ips_list)
+
+        self.user_var = tk.StringVar()
+        self.user_var.set(self.sftp_manager.user)
+        self.user_var.trace("w", self.set_user)
+        self.user_input = Labeled_entry(self, "Пользователь", self.user_var)
+
+        self.password_var = tk.StringVar()
+        self.password_var.set(self.sftp_manager.password)
+        self.password_var.trace("w", self.set_password)
+        self.password_input = Labeled_entry(self, "Пароль", self.password_var)
+
+        self.remote_dir_var = tk.StringVar()
+        self.remote_dir_var.set(self.sftp_manager.remote_dir)
+        self.remote_dir_var.trace("w", self.set_remote_dir)
+        self.remote_dir_input = Labeled_entry(self, "Директория на устройстве", self.remote_dir_var)
+
+        self.ip_choice.grid(column=0, row=0, sticky="NSEW")
+        self.refresh_btn.grid(column=1, row=0, sticky="NSEW")
+
+        self.user_input.grid(column=0, row=1, sticky="NSEW")
+        self.password_input.grid(column=0, row=2, sticky="NSEW")
+        self.remote_dir_input.grid(column=0, row=3, sticky="NSEW")
+
+    def set_ip(self, *args):
+        self.sftp_manager.ip = self.ip_var.get()
+        self.sftp_manager.save()
+
+    def set_user(self, *args):
+        self.sftp_manager.user = self.user_var.get()
+        self.sftp_manager.save()
+
+    def set_password(self, *args):
+        self.sftp_manager.password = self.password_var.get()
+        self.sftp_manager.save()
+
+    def set_remote_dir(self, *args):
+        self.sftp_manager.remote_dir = self.remote_dir_var.get()
+        self.sftp_manager.save()
+
+    def set_options(self, options):
+        set_choice_options(self.ip_var, self.ip_choice, options)
+
+    def update_ips_list(self):
+        msg = MyMessage(self, "Пожалуйста подождите...", "Идёт поиск IP адресов")
+        ips = get_hosts_with_port(22)
+        self.set_options(ips)
+        msg.destroy()
+
+
 class GUI:
-    def __init__(self, device):
+    def __init__(self, device, sftp_manager):
         self.device = device
+        self.sftp_manager = sftp_manager
 
         self.window = tk.Tk()
         self.window.configure(background='white')
@@ -392,10 +468,18 @@ class GUI:
         self.file_menu.add_command(label="Показать", command=self.send_data)
         self.menubar.add_cascade(label="Файл", menu=self.file_menu)
 
+        self.sftp_menu = tk.Menu(self.menubar)
+        self.sftp_menu.add_command(label="Настройить", command=self.show_sftp_params)
+        self.sftp_menu.add_command(label="Плдключить", command=self.sftp_manager.mount)
+        self.sftp_menu.add_command(label="Отмонтировать", command=self.sftp_manager.unmount)
+        self.menubar.add_cascade(label="SFTP", menu=self.sftp_menu)
+
         self.window.mainloop()
 
-    def send_data(self):
+    def show_sftp_params(self):
+        SFTPParameters(self.window, self.sftp_manager)
 
+    def send_data(self):
         try:
             current_tab = self.tabs.index("current")
 

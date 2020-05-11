@@ -1,3 +1,4 @@
+from dispenser.configuration.SFTPManager import SFTPManager
 from interfacing.InterfacingManager import InterfacingManager
 
 from Interfacing import Interfacing
@@ -8,4 +9,6 @@ interfacing.start()
 
 device = Interfacing(interfacing)
 
-gui = GUI.GUI(device)
+sftp_manager = SFTPManager()
+
+gui = GUI.GUI(device, sftp_manager)
