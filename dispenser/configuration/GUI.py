@@ -97,7 +97,7 @@ class Mode_graph(tk.Canvas):
 
             px_per_level = -float(self.height - (self.height - self.start_y) - 20) / 255
             px_per_sec = (self.width - self.start_x) / (
-                        values["min_time"] + values["max_time"] + values["rise_time"] + values["decrease_time"])
+                    values["min_time"] + values["max_time"] + values["rise_time"] + values["decrease_time"])
 
             self.draw_grid(px_per_sec, px_per_level, True, False)
 
@@ -261,18 +261,42 @@ class TextControl(tk.Frame):
         return self.text_var.get(), int(self.duration_var.get()), int(self.size_var.get()), self.color_entries.get_rgb()
 
 
+class FileSelector(tk.Frame):
+    def __init__(self, parent, file_var, initialdir=os.getcwd(), filetypes=((),)):
+        tk.Frame.__init__(self, parent)
+
+        self.initialdir = initialdir
+        self.filetypes = filetypes
+        self.file_var = file_var
+
+        self.file_input = Labeled_entry(self, "Файл", self.file_var, False)
+        self.select_btn = tk.Button(self, text="Обзор", command=self.select)
+
+        self.file_input.grid(column=0, row=0, sticky="NSEW")
+        self.select_btn.grid(column=1, row=0, sticky="NSEW")
+
+    def select(self):
+        res = tkFileDialog.askopenfilename(initialdir=self.initialdir, title="Выберете файл",
+                                           filetypes=(("all files", "*.*"),) + self.filetypes)
+        self.file_var.set(res)
+
+
 class MediaControl(tk.Frame):
-    def __init__(self, root):
+    def __init__(self, root, content_dir):
         tk.Frame.__init__(self, root)
 
         self.select_frame = tk.Frame(self)
 
         self.type_var = tk.StringVar()
+        self.type_var.set("I")
         self.image_btn = tk.Radiobutton(self.select_frame, text="Изображение", variable=self.type_var, value="I")
         self.video_btn = tk.Radiobutton(self.select_frame, text="Видео", variable=self.type_var, value="V")
 
         self.name_var = tk.StringVar()
-        self.name_input = Labeled_entry(self, "Имя", self.name_var, False)
+        self.name_input = FileSelector(self, self.name_var, content_dir,
+                                       (("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg"),
+                                        ("AVI", "*.avi"), ("MP4", "*.mp4")))
+        self.name_input.file_var.trace("w", self.on_file_updated)
 
         self.duration_var = tk.StringVar()
         self.duration_input = Labeled_entry(self, "Длительность (миллисекунд)", self.duration_var)
@@ -284,11 +308,15 @@ class MediaControl(tk.Frame):
         self.name_input.grid(column=0, row=1, sticky="NSEW")
         self.duration_input.grid(column=0, row=2, sticky="NSEW")
 
+    def on_file_updated(self, *args):
+        val = self.name_var.get()
+        self.name_var.set(val.split("/")[-1])
+
     def is_ok(self):
         return self.duration_var.get()
 
     def get(self):
-        return self.type_var.get(), self.name_var.get(), int(self.duration_var.get())
+        return self.type_var.get(), self.name_input.file_var.get(), int(self.duration_var.get())
 
 
 def set_choice_options(var, choice, options):
@@ -336,7 +364,6 @@ class PortSelector(tk.Frame):
         set_choice_options(self.port_var, self.port_choice, options)
 
     def update_ports_list(self):
-        # tkMessageBox.showinfo("Пожалуйста, подождите...", "Идёт сканирование портов")
         msg = MyMessage(self, 'Пожалуйста, подождите...', "Идёт сканирование портов")
 
         ports = list_serial_ports()
@@ -450,13 +477,10 @@ class GUI:
 
         self.strip_mode_params = Mode_inputs(self.tabs)
         self.text_control = TextControl(self.tabs)
-        self.media_control = MediaControl(self.tabs)
-        # self.qr_mode_params = Mode_inputs(self.tabs)
-        # self.mode_params.pack()
+        self.media_control = MediaControl(self.tabs, self.sftp_manager.local_dir)
         self.tabs.add(self.strip_mode_params, text="лента")
         self.tabs.add(self.text_control, text="текст")
         self.tabs.add(self.media_control, text="медиа")
-        # self.tabs.add(self.qr_mode_params, text="QR")
 
         self.tabs.pack(expand=1, fill="both")
 
@@ -490,7 +514,7 @@ class GUI:
             elif current_tab == 2:
                 media = self.media_control.get()
                 if media[0] == "I":
-                    self.device.set_dispaly_image(media[1], media[2])
+                    self.device.set_display_image(media[1], media[2])
                 else:
                     self.device.set_display_video(media[1], media[2])
         except ValueError:
