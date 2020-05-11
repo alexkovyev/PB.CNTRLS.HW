@@ -10,9 +10,9 @@ class SFTPManager(object):
     linux_unmount_cmd = "fusermount -uz {dir}"
     linux_mkdir_cmd = "mkdir -p {dir}"
 
-    windows_mount_cmd = ""
-    windows_unmount_cmd = ""
-    windows_mkdir_cmd = ""
+    windows_mount_cmd = "use {local_dir} \\sshfs\{user}}@{ip}}\{remote_dir}}"
+    windows_unmount_cmd = "use {dir} /delete"
+    windows_mkdir_cmd = "if not exist {dir} mkdir {dir}"
 
     settings_file = "sftp_config.json"
 
@@ -21,11 +21,16 @@ class SFTPManager(object):
         self.user = "orangepi"
         self.password = "orangepi"
         self.remote_dir = "/home/orangepi/PB.CNTRLS.HW/dispenser/main/resources"
-        self.local_dir = "remote_resources"
 
         self.load()
 
         self._sys_name = platform.system()
+
+        if self._sys_name == "Windows":
+            self.local_dir = "X:"
+        else:
+            self.local_dir = "remote_resources"
+
 
     def _mkdir_linux(self):
         cmd = SFTPManager.linux_mkdir_cmd.format(dir=self.local_dir)
@@ -44,13 +49,24 @@ class SFTPManager(object):
         os.popen(cmd)
 
     def _unmount_windows(self):
-        pass
+        cmd = SFTPManager.windows_unmount_cmd.format(dir=self.local_dir)
+        os.popen(cmd)
 
     def _mkdir_windows(self):
-        pass
+        cmd = SFTPManager.windows_mkdir_cmd.format(dir=self.local_dir)
+        os.popen(cmd)
 
     def _mount_windows(self):
-        pass
+        cmd = SFTPManager.linux_mount_cmd.format(user=self.user, ip=self.ip,
+                                            remote_dir=self.remote_dir,
+                                            local_dir=self.local_dir)
+        self._mkdir_windows()
+        time.sleep(0.5)
+        p = os.popen(cmd, "w")
+        time.sleep(1)
+        p.write(self.password)
+        time.sleep(1)
+        p.write(self.password)
 
     def unmount(self):
         if self._sys_name == "Linux":
