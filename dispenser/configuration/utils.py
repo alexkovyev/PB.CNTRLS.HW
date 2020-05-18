@@ -6,6 +6,21 @@ import subprocess
 import os
 
 
+def ping(host):
+    """
+    Returns True if host (str) responds to a ping request.
+    Remember that a host may not respond to a ping (ICMP) request even if the host name is valid.
+    """
+
+    # Option for the number of packets as a function of
+    param = '-n' if platform.system().lower() == 'windows' else '-c'
+
+    # Building the command. Ex: "ping -c 1 google.com"
+    command = ['ping', param, '1', "-w", "1", host]
+
+    return subprocess.call(command) == 0
+
+
 # https://stackoverflow.com/a/48607794/9577873
 def pinger(job_q, results_q):
     """
@@ -41,7 +56,7 @@ def get_my_ip():
     return ip
 
 
-def map_network(pool_size=255):
+def map_network(pool_size=1):
     """
     Maps the network
     :param pool_size: amount of parallel ping processes
@@ -54,29 +69,38 @@ def map_network(pool_size=255):
     ip_parts = get_my_ip().split('.')
     base_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.'
 
-    # prepare the jobs queue
-    jobs = multiprocessing.Queue()
-    results = multiprocessing.Queue()
+    if platform.system() != "Windows":
+        # prepare the jobs queue
+        jobs = multiprocessing.Queue()
+        results = multiprocessing.Queue()
 
-    pool = [multiprocessing.Process(target=pinger, args=(jobs, results)) for i in range(pool_size)]
+        pool = [multiprocessing.Process(target=pinger, args=(jobs, results)) for i in range(pool_size)]
 
-    for p in pool:
-        p.start()
+        for p in pool:
+            p.start()
 
-    # cue hte ping processes
-    for i in range(1, 255):
-        jobs.put(base_ip + '{0}'.format(i))
+        # cue hte ping processes
+        for i in range(1, 255):
+            jobs.put(base_ip + '{0}'.format(i))
 
-    for p in pool:
-        jobs.put(None)
+        for p in pool:
+            jobs.put(None)
 
-    for p in pool:
-        p.join()
+        for p in pool:
+            p.join()
 
-    # collect he results
-    while not results.empty():
-        ip = results.get()
-        ip_list.append(ip)
+        # collect he results
+        while not results.empty():
+            ip = results.get()
+            ip_list.append(ip)
+    else:
+        # using multiprocessing cause multiple instances of the GUI to show up, so i`ve just done it without the
+        # multiprocessing
+        for i in range(1, 255):  # windows sucks
+            ip = base_ip + '{0}'.format(i)
+            print "Checking:", ip
+            if ping(ip):
+                ip_list.append(ip)
 
     return ip_list
 
