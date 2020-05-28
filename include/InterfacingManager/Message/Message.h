@@ -23,7 +23,9 @@ namespace Interfacing {
             Message(const std::string &nodeName, const std::string &commandName,
                     const std::vector<std::string> &parameters);
 
-            Message(Message &other);
+            Message(const std::string &nodeName, const std::string &commandName);
+
+            Message(const Message &other);
 
             void print_serial();
 

@@ -9,7 +9,7 @@
 namespace Interfacing {
     namespace Messages {
 
-        Message::Message(Message &other) {
+        Message::Message(const Message &other) {
             node_name = other.node_name;
             command_name = other.command_name;
             parameters = other.parameters;
@@ -18,6 +18,11 @@ namespace Interfacing {
         Message::Message(const std::string &nodeName, const std::string &commandName,
                          const std::vector<std::string> &parameters) : node_name(nodeName), command_name(commandName),
                                                                        parameters(parameters) {}
+
+        Message::Message(const std::string &nodeName, const std::string &commandName)
+                        : node_name(nodeName), command_name(commandName) {
+
+        }
 
         Message &Interfacing::Messages::Message::operator=(Interfacing::Messages::Message &&other) noexcept {
             if (this != &other) {

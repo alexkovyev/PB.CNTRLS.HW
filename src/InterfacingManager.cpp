@@ -30,7 +30,7 @@ namespace Interfacing {
         return reader.msg;
     }
 
-    void InterfacingManager::send_message(Messages::Message &msg) {
+    void InterfacingManager::send_message(const Messages::Message &msg) {
         bridge.send(msg.to_string());
     }
 

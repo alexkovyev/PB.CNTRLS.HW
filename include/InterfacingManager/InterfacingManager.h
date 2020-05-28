@@ -26,7 +26,7 @@ namespace Interfacing {
 
         Messages::Message &get_massage();
 
-        void send_message(Messages::Message &msg);
+        void send_message(const Messages::Message &msg);
 
     };
 
